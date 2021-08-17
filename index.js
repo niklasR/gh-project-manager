@@ -50,14 +50,28 @@ async function syncDown() {
   }
 }
 
+async function getLocalNote(columnName, cardId) {
+  const columnPath = `${EXPORT_PATH}/${columnName}`;
+  
+  try {
+    const localNote = await fs.readFile(`${columnPath}/${cardId}.md`);
+    return {
+      localNote,
+      newColumn: columnName
+    };
+  } catch (error) {
+    if (error.code !== 'ENOENT') throw error;
+    throw new Error('File not found - Moving columns is not currently supported.');
+  }
+}
+
+
 async function syncUp() {
   const columnsWithCards = await getColumnsWithCards();
 
   for (const column of columnsWithCards) {
-    const columnPath = `${EXPORT_PATH}/${column.name}`;
-
     for (const card of column.cards) {
-      const localNote = (await fs.readFile(`${columnPath}/${card.id}.md`)).toString();
+      const { localNote, newColumn } = getLocalNote(column.name, card.id).toString();
       if (localNote !== card.note) {
 
         console.log(`Updating card ${card.id}`);
